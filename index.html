@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknik Servis ve Arıza Takip Sistemi | KOBİ Cihaz Kabul Portalı</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --secondary: #0f172a;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text-main); line-height: 1.5; padding: 32px 16px; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: white; font-weight: 700; cursor: pointer; color: var(--text-muted); text-align: center; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .header {
+            text-align: center; margin-bottom: 24px; background: white; padding: 30px 20px;
+            border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            position: relative; overflow: hidden;
+        }
+        .header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--primary); }
+        .header-badge {
+            display: inline-block; background: #e0f2fe; color: var(--primary);
+            font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; margin-bottom: 10px;
+        }
+        .header h1 { font-size: 1.6rem; color: var(--secondary); margin-bottom: 8px; font-weight: 800; }
+        .header p { font-size: 0.9rem; color: var(--text-muted); max-width: 680px; margin: 0 auto; }
+
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 26px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .card-title {
+            font-size: 1.05rem; font-weight: 700; color: var(--secondary); margin-bottom: 18px;
+            display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: span 2; }
+        label { font-size: 0.83rem; font-weight: 600; color: #334155; }
+        label span.req { color: #dc2626; }
+
+        input, select, textarea {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.88rem; outline: none; background: #f8fafc; color: var(--text-main);
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+        textarea { min-height: 80px; resize: vertical; }
+
+        .btn-submit {
+            width: 100%; background: var(--primary); color: white; border: none; padding: 14px;
+            border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-submit:hover { background: var(--primary-hover); }
+
+        .result-box {
+            display: none; background: white; border: 2px solid #bae6fd; border-radius: 12px;
+            padding: 32px 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+
+        .service-receipt {
+            border: 2px dashed #0284c7; padding: 24px; border-radius: 8px; background: #f0f9ff;
+            margin-top: 20px; font-size: 0.9rem; line-height: 1.6;
+        }
+
+        .query-result {
+            display: none; background: white; border: 1px solid var(--border); border-radius: 12px;
+            padding: 24px; margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab-btn active" id="tabNewBtn" onclick="switchTab('new')">🛠️ Yeni Cihaz / Servis Kaydı</button>
+        <button class="tab-btn" id="tabQueryBtn" onclick="switchTab('query')">🔍 Cihaz Durumu Sorgulama</button>
+    </div>
+
+    <!-- TAB 1: YENİ SERVİS FORMU -->
+    <div id="sectionNew">
+        <div class="header">
+            <div class="header-badge">TEKNİK SERVİS & ONARIM TAKİP</div>
+            <h1>Teknik Servis Cihaz Kabul Portalı</h1>
+            <p>Müşteri arıza kayıtlarını oluşturun, seri numarası bazlı takip fişi verin ve yasal azami tamir süresi kapsamında süreçleri yönetin.</p>
+        </div>
+
+        <form id="serviceForm" onsubmit="handleServiceSubmit(event)">
+            <!-- 1. Müşteri Bilgileri -->
+            <div class="card">
+                <h2 class="card-title">👤 1. Müşteri Bilgileri</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Müşteri Adı Soyadı / Şirket <span class="req">*</span></label>
+                        <input type="text" id="customerName" required placeholder="Ad Soyad veya Kurum Unvanı">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefon Numarası <span class="req">*</span></label>
+                        <input type="tel" id="customerPhone" required placeholder="05XX XXX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label>E-Posta Adresi</label>
+                        <input type="email" id="customerEmail" placeholder="ornek@domain.com">
+                    </div>
+                    <div class="form-group">
+                        <label>TCKN / Vergi No</label>
+                        <input type="text" id="customerTaxId" placeholder="Fatura için TCKN / VKN" maxlength="11">
+                    </div>
+                    <div class="form-group full">
+                        <label>Adres</label>
+                        <input type="text" id="customerAddress" placeholder="Müşteri adresi (kargo / yerinde servis için)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Cihaz Bilgileri -->
+            <div class="card">
+                <h2 class="card-title">💻 2. Cihaz ve Ekipman Bilgileri</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Cihaz Kategorisi <span class="req">*</span></label>
+                        <select id="deviceCategory" required>
+                            <option value="Laptop / Dizüstü Bilgisayar">Laptop / Dizüstü Bilgisayar</option>
+                            <option value="Masaüstü PC / Server">Masaüstü PC / Server</option>
+                            <option value="Akıllı Telefon / Tablet">Akıllı Telefon / Tablet</option>
+                            <option value="Yazıcı / Barkod Okuyucu">Yazıcı / Barkod Okuyucu / POS</option>
+                            <option value="Endüstriyel Cihaz / Makine">Endüstriyel Cihaz / Makine</option>
+                            <option value="Ağ & Güvenlik (Modem/Kamera)">Ağ & Güvenlik (Modem/Kamera)</option>
+                            <option value="Diğer">Diğer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Marka ve Model <span class="req">*</span></label>
+                        <input type="text" id="deviceBrandModel" required placeholder="Örn: Lenovo ThinkPad E15">
+                    </div>
+                    <div class="form-group">
+                        <label>Seri Numarası (S/N) <span class="req">*</span></label>
+                        <input type="text" id="deviceSerial" required placeholder="Cihaz seri no veya IMEI">
+                    </div>
+                    <div class="form-group">
+                        <label>Garanti Durumu <span class="req">*</span></label>
+                        <select id="warrantyStatus" required>
+                            <option value="Garantisi Devam Ediyor">Garantisi Devam Ediyor</option>
+                            <option value="Garanti Dışı / Ücretli">Garanti Dışı / Ücretli Onarım</option>
+                            <option value="Kullanıcı Hatası (Sıvı/Darbe)">Kullanıcı Hatası (Sıvı/Darbe)</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label>Birlikte Teslim Alınan Aksesuarlar</label>
+                        <input type="text" id="accessories" placeholder="Örn: Orijinal adaptör, güç kablosu, çanta, mouse vb.">
+                    </div>
+                    <div class="form-group full">
+                        <label>Cihazın Fiziksel Durumu / Mevcut Çizik-Kırıklar</label>
+                        <input type="text" id="physicalCondition" placeholder="Örn: Kasa sağ köşede hafif çatlak, ekranda koruyucu var...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Arıza Bildirimi -->
+            <div class="card">
+                <h2 class="card-title">⚠️ 3. Arıza Bildirimi ve Şikayet</h2>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Müşteri Şikayeti / Arıza Tanımı <span class="req">*</span></label>
+                        <textarea id="faultDescription" required placeholder="Cihaz açılmıyor, mavi ekran veriyor, şarj almıyor, aşırı ısınıyor..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Öngörülen Azami Bütçe Onayı (TL)</label>
+                        <input type="number" id="estimatedBudget" placeholder="Örn: 1500 TL üzeri için arayın">
+                    </div>
+                    <div class="form-group">
+                        <label>Yedekleme Durumu</label>
+                        <select id="dataBackupStatus">
+                            <option value="Veri yedeği alındı, formatlanabilir">Veri yedeği alındı, formatlanabilir</option>
+                            <option value="Veriler çok önemli, kurtarma talep ediliyor">Veriler çok önemli, kurtarma talep ediliyor</option>
+                            <option value="Veri yok / Önemsiz">Veri yok / Önemsiz</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <span>📥 Cihazı Servise Kabul Et & Teslim Fişi Yazdır</span>
+            </button>
+        </form>
+
+        <!-- Servis Fişi Sonuç Ekranı -->
+        <div class="result-box" id="resultBox">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 2.8rem; margin-bottom: 8px;">✅</div>
+                <h2 style="color: var(--secondary);">Servis Kabul Kaydı Başarıyla Oluşturuldu</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">
+                    Müşteriye verilecek resmi servis teslim fişi aşağıdadır.
+                </p>
+                <div style="margin: 14px 0; font-size: 1.4rem; font-weight: 800; color: var(--primary);" id="trackingCodeDisplay">SERVIS-2026-0000</div>
+            </div>
+
+            <div class="service-receipt" id="printReceipt">
+                <div style="text-align:center; font-weight:bold; font-size: 1.15rem; margin-bottom: 12px; border-bottom: 1px solid #bae6fd; padding-bottom: 8px;">
+                    TEKNİK SERVİS CİHAZ KABUL VE TESLİM FİŞİ
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem;">
+                    <div><b>Kayıt No:</b> <span id="prCode"></span></div>
+                    <div><b>Tarih:</b> <span id="prDate"></span></div>
+                    <div><b>Müşteri:</b> <span id="prName"></span></div>
+                    <div><b>Telefon:</b> <span id="prPhone"></span></div>
+                    <div><b>Cihaz:</b> <span id="prDevice"></span></div>
+                    <div><b>Seri No:</b> <span id="prSerial"></span></div>
+                    <div><b>Garanti:</b> <span id="prWarranty"></span></div>
+                    <div><b>Aksesuar:</b> <span id="prAcc"></span></div>
+                </div>
+                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #bae6fd; font-size: 0.85rem;">
+                    <b>Arıza Bildirimi:</b> <span id="prFault"></span><br>
+                    <b>Fiziksel Durum:</b> <span id="prPhys"></span>
+                </div>
+                <div style="margin-top: 12px; font-size: 0.75rem; color: #475569; border-top: 1px solid #e2e8f0; padding-top: 8px; line-height: 1.4;">
+                    * 6502 sayılı Tüketicinin Korunması Kanunu gereğince azami tamir süresi 20 iş günüdür.<br>
+                    * Onarım tamamlandıktan sonra 90 gün içinde teslim alınmayan cihazlardan firmamız sorumlu değildir.<br>
+                    * Online durum sorgulamak için bu fişteki takip kodunu kullanabilirsiniz.
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; display: flex; justify-content: center; gap: 12px;">
+                <button class="btn-submit" style="width: auto; padding: 10px 22px;" onclick="window.print()">🖨️ Teslim Fişini Yazdır</button>
+                <button class="btn-submit" style="width: auto; padding: 10px 22px; background: #e2e8f0; color: #334155;" onclick="location.reload()">➕ Yeni Servis Kabulü</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: DURUM SORGULAMA -->
+    <div id="sectionQuery" style="display: none;">
+        <div class="card">
+            <h2 class="card-title">🔍 Cihaz Durumu ve Onarım Sorgulama</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Servis Takip Numaranız <span class="req">*</span></label>
+                    <input type="text" id="queryCode" placeholder="Örn: SERVIS-2026-1234">
+                </div>
+                <div class="form-group">
+                    <label>Telefon Numaranız (Son 4 Hane) <span class="req">*</span></label>
+                    <input type="text" id="queryPhoneLast4" placeholder="Örn: 1234" maxlength="4">
+                </div>
+            </div>
+            <button class="btn-submit" style="margin-top: 16px;" onclick="queryServiceStatus()">Cihaz Durumunu Sorgula</button>
+        </div>
+
+        <div class="query-result" id="queryResultBox">
+            <h3 style="color: var(--secondary); margin-bottom: 12px;" id="qResHeader">Cihaz Durum Bilgisi</h3>
+            <div id="qResContent" style="font-size: 0.92rem; line-height: 1.8;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tab) {
+    if (tab === 'new') {
+        document.getElementById('sectionNew').style.display = 'block';
+        document.getElementById('sectionQuery').style.display = 'none';
+        document.getElementById('tabNewBtn').classList.add('active');
+        document.getElementById('tabQueryBtn').classList.remove('active');
+    } else {
+        document.getElementById('sectionNew').style.display = 'none';
+        document.getElementById('sectionQuery').style.display = 'block';
+        document.getElementById('tabQueryBtn').classList.add('active');
+        document.getElementById('tabNewBtn').classList.remove('active');
+    }
+}
+
+async function handleServiceSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = '⏳ Kaydediliyor...';
+
+    const payload = {
+        customer_name: document.getElementById('customerName').value.trim(),
+        customer_phone: document.getElementById('customerPhone').value.trim(),
+        customer_email: document.getElementById('customerEmail').value.trim(),
+        customer_tax_id: document.getElementById('customerTaxId').value.trim(),
+        customer_address: document.getElementById('customerAddress').value.trim(),
+        device_category: document.getElementById('deviceCategory').value,
+        device_brand_model: document.getElementById('deviceBrandModel').value.trim(),
+        device_serial: document.getElementById('deviceSerial').value.trim(),
+        warranty_status: document.getElementById('warrantyStatus').value,
+        accessories: document.getElementById('accessories').value.trim(),
+        physical_condition: document.getElementById('physicalCondition').value.trim(),
+        fault_description: document.getElementById('faultDescription').value.trim(),
+        estimated_budget: parseFloat(document.getElementById('estimatedBudget').value) || 0,
+        data_backup_status: document.getElementById('dataBackupStatus').value,
+        status: 'Cihaz Kabul Edildi',
+        repair_cost: 0,
+        created_at: new Date().toISOString()
+    };
+
+    let trackingCode = 'SERVIS-2026-' + Math.floor(1000 + Math.random() * 9000);
+
+    try {
+        const res = await fetch('/api/servis-kayit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.tracking_code) trackingCode = data.tracking_code;
+        }
+    } catch (err) {
+        const local = JSON.parse(localStorage.getItem('kobi_servis_kayitlar') || '[]');
+        payload.tracking_code = trackingCode;
+        local.push(payload);
+        localStorage.setItem('kobi_servis_kayitlar', JSON.stringify(local));
+    }
+
+    document.getElementById('serviceForm').style.display = 'none';
+    document.getElementById('resultBox').style.display = 'block';
+    document.getElementById('trackingCodeDisplay').innerText = trackingCode;
+
+    // Fill Receipt
+    document.getElementById('prCode').innerText = trackingCode;
+    document.getElementById('prDate').innerText = new Date().toLocaleDateString('tr-TR');
+    document.getElementById('prName').innerText = payload.customer_name;
+    document.getElementById('prPhone').innerText = payload.customer_phone;
+    document.getElementById('prDevice').innerText = `${payload.device_category} - ${payload.device_brand_model}`;
+    document.getElementById('prSerial').innerText = payload.device_serial;
+    document.getElementById('prWarranty').innerText = payload.warranty_status;
+    document.getElementById('prAcc').innerText = payload.accessories || 'Yok';
+    document.getElementById('prFault').innerText = payload.fault_description;
+    document.getElementById('prPhys').innerText = payload.physical_condition || 'Normal';
+}
+
+async function queryServiceStatus() {
+    const code = document.getElementById('queryCode').value.trim().toUpperCase();
+    const phoneLast4 = document.getElementById('queryPhoneLast4').value.trim();
+    if (!code || !phoneLast4) {
+        alert('Lütfen takip kodunu ve telefonunuzun son 4 hanesini giriniz.');
+        return;
+    }
+
+    let records = [];
+    try {
+        const res = await fetch('/api/servis-kayitlar');
+        if (res.ok) records = await res.json();
+        else records = JSON.parse(localStorage.getItem('kobi_servis_kayitlar') || '[]');
+    } catch (e) {
+        records = JSON.parse(localStorage.getItem('kobi_servis_kayitlar') || '[]');
+    }
+
+    const match = records.find(r => 
+        (r.tracking_code || '').toUpperCase() === code && 
+        (r.customer_phone || '').replace(/\D/g, '').endsWith(phoneLast4)
+    );
+
+    const qBox = document.getElementById('queryResultBox');
+    const qContent = document.getElementById('qResContent');
+    qBox.style.display = 'block';
+
+    if (!match) {
+        qContent.innerHTML = `<span style="color:#dc2626;">❌ Girilen takip numarası veya telefon son 4 hanesi eşleşen servis kaydı bulunamadı.</span>`;
+        return;
+    }
+
+    qContent.innerHTML = `
+        <div><b>Takip Numarası:</b> ${match.tracking_code}</div>
+        <div><b>Cihaz:</b> ${match.device_brand_model} (Seri No: ${match.device_serial})</div>
+        <div><b>Giriş Tarihi:</b> ${match.created_at ? new Date(match.created_at).toLocaleDateString('tr-TR') : '-'}</div>
+        <div><b>Mevcut Durum:</b> <span style="background:#e0f2fe; color:#0284c7; padding:2px 8px; border-radius:4px; font-weight:700;">${match.status || 'İnceleniyor'}</span></div>
+        <div><b>Onarım / Parça Tutarı:</b> <b>${(parseFloat(match.repair_cost)||0).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b></div>
+        <div><b>Teknik Not:</b> ${match.technician_note || 'Cihazınız teknik ekip tarafından incelenmektedir.'}</div>
+    `;
+}
+</script>
+
+</body>
+</html>
