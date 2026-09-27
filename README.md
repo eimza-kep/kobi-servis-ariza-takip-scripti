@@ -76,6 +76,18 @@ python scripts/test_servis.py
 
 ---
 
+## 🌐 KOBİ & E-Dönüşüm Açık Kaynak Ekosistemi
+
+Bu servis ve arıza takip sistemi, [@eimza-kep](https://github.com/eimza-kep) açık kaynak ekosisteminin saha ve teknik servis operasyon modülüdür. İlgili diğer araçlar:
+
+* 📊 [kobi-musteri-memnuniyet-nps-scripti](https://github.com/eimza-kep/kobi-musteri-memnuniyet-nps-scripti) - Cihaz tesliminde müşteriye otomatik NPS memnuniyet anketi gönderme.
+* 💼 [kobi-hizli-teklif-scripti](https://github.com/eimza-kep/kobi-hizli-teklif-scripti) - Onarım öncesi parça ve işçilik maliyet teklifi hazırlama portalı.
+* 🏢 [kobi-finans-yonetim-excel-sablonlari](https://github.com/eimza-kep/kobi-finans-yonetim-excel-sablonlari) - Yedek parça stok takibi ve kritik seviye uyarı Excel araçları.
+* 🌟 [awesome-turkiye-e-donusum](https://github.com/eimza-kep/awesome-turkiye-e-donusum) - Türkiye e-Dönüşüm açık kaynak araçları ve kütüphaneleri kürasyonu.
+
+---
+
 ## ⚖️ Lisans
 
 Bu proje [MIT Lisansı](LICENSE) kapsamında açık kaynak olarak sunulmuştur.
+
