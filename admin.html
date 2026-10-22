@@ -16,13 +16,16 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: var(--bg); color: var(--text-main); line-height: 1.5; padding: 24px; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1280px; margin: 0 auto; }
         .navbar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 18px 24px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
         .navbar h1 { font-size: 1.3rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-        .nav-actions { display: flex; gap: 10px; }
-        .btn { padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--text-main); transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .nav-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; color: var(--text-main); transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn:hover { background: #f1f5f9; }
         .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
         .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: #10b981; color: white; border-color: #10b981; }
+        .btn-success:hover { background: #059669; }
         .btn-wa { background: #25d366; color: white; border-color: #25d366; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -36,8 +39,8 @@
 
         .table-container { background: white; border-radius: 10px; border: 1px solid var(--border); overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
-        th { background: #f8fafc; padding: 12px 16px; font-weight: 700; color: #475569; border-bottom: 1px solid var(--border); white-space: nowrap; }
-        td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        th { background: #f8fafc; padding: 12px 14px; font-weight: 700; color: #475569; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
         tr:hover { background: #f1f5f9; }
 
         .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
@@ -47,20 +50,26 @@
         .badge-done { background: #f1f5f9; color: #475569; }
 
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-        .modal-card { background: white; width: 100%; max-width: 650px; border-radius: 12px; padding: 24px; max-height: 90vh; overflow-y: auto; }
+        .modal-card { background: white; width: 100%; max-width: 720px; border-radius: 12px; padding: 24px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
-        .detail-row { display: flex; margin-bottom: 10px; font-size: 0.88rem; }
-        .detail-lbl { width: 160px; font-weight: 600; color: var(--text-muted); }
+        .detail-row { display: flex; margin-bottom: 8px; font-size: 0.88rem; }
+        .detail-lbl { width: 170px; font-weight: 600; color: var(--text-muted); }
         .detail-val { flex: 1; color: var(--text-main); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group.full { grid-column: span 2; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: #334155; }
+        .form-group input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; outline: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="navbar">
-        <h1>🛠️ Teknik Servis ve RMA Yönetim Paneli</h1>
+        <h1>🛠️ Teknik Servis, Termal Baskı & RMA Yönetim Paneli</h1>
         <div class="nav-actions">
-            <a href="/" class="btn" target="_blank">🌐 Cihaz Kabul / Sorgulama</a>
+            <button class="btn" onclick="openSettingsModal()">⚙️ Servis & Fatura Ayarları</button>
+            <a href="/" class="btn" target="_blank">🌐 Cihaz Kabul Portalı</a>
             <button class="btn btn-primary" onclick="exportCSV()">📥 CSV Dışa Aktar</button>
             <button class="btn" onclick="fetchData()">🔄 Yenile</button>
         </div>
@@ -117,7 +126,7 @@
                     <th>Arıza Özeti</th>
                     <th>Tutar</th>
                     <th>Durum</th>
-                    <th>İşlem</th>
+                    <th>Hızlı İşlemler</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -127,7 +136,7 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Cihaz & Onarım Detay Modalı -->
 <div class="modal" id="detailModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -135,6 +144,20 @@
             <button onclick="closeModal()" style="border:none; background:none; font-size: 1.2rem; cursor:pointer;">✖</button>
         </div>
         <div id="modalBody"></div>
+
+        <!-- Fatura & e-SMM Hızlı Kesim Paneli -->
+        <div style="margin-top: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 700; color: #166534; font-size: 0.9rem;">🧾 e-Fatura & e-SMM Hızlı Kesim Kancası:</div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-success" style="padding: 4px 10px; font-size: 0.8rem;" onclick="downloadEfaturaXml()">📥 e-Fatura UBL XML</button>
+                    <button class="btn" style="padding: 4px 10px; font-size: 0.8rem; background: #0284c7; color: white;" onclick="openEsmmPage()">📑 e-SMM Makbuzu</button>
+                </div>
+            </div>
+            <div id="smmCalcPreview" style="font-size: 0.83rem; color: #14532d; line-height: 1.6;">
+                Tutar girildiğinde otomatik stopaj ve KDV hesabı burada gösterilir.
+            </div>
+        </div>
 
         <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
             <div style="font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">Teknik Servis Güncellemesi:</div>
@@ -153,7 +176,7 @@
                 </div>
                 <div>
                     <label style="font-size: 0.8rem; font-weight: 600;">Onarım / Parça Tutarı (TL):</label>
-                    <input type="number" step="0.01" id="changeCostInput" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                    <input type="number" step="0.01" id="changeCostInput" oninput="updateBillingPreview()" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
                 </div>
             </div>
             <div>
@@ -162,13 +185,85 @@
             </div>
         </div>
 
-        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px;">
-            <button class="btn btn-primary" onclick="updateCurrentStatus()">💾 Kaydet</button>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-wa" onclick="sendWhatsApp()">💬 WhatsApp Bilgisi</button>
-                <button class="btn" onclick="window.print()">🖨️ Fiş Yazdır</button>
+        <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap; gap: 8px;">
+            <button class="btn btn-primary" onclick="updateCurrentStatus()">💾 Güncellemeyi Kaydet</button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn" onclick="openThermalReceipt(activeItem ? activeItem.tracking_code : '', '80mm')">🖨️ 80mm Fiş</button>
+                <button class="btn" onclick="openDeviceLabel(activeItem ? activeItem.tracking_code : '')">🏷️ Etiket</button>
+                <button class="btn btn-wa" onclick="sendWhatsApp()">💬 WhatsApp</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Şirket & Servis Ayarları Modalı -->
+<div class="modal" id="settingsModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>⚙️ Servis & Fatura / e-SMM Ayarları</h3>
+            <button onclick="closeSettingsModal()" style="border:none; background:none; font-size: 1.2rem; cursor:pointer;">✖</button>
+        </div>
+        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 14px;">
+            Bu bilgiler termal fiş başlığında, e-SMM ve GİB UBL-TR 2.1 fatura taslaklarında tedarikçi firma olarak kullanılır.
+        </p>
+        <form onsubmit="saveSettings(event)">
+            <div class="form-row">
+                <div class="form-group full">
+                    <label>Firma / Teknik Servis Unvanı</label>
+                    <input type="text" id="set_title" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>VKN / TCKN</label>
+                    <input type="text" id="set_vkn" required>
+                </div>
+                <div class="form-group">
+                    <label>Vergi Dairesi</label>
+                    <input type="text" id="set_tax_office" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group full">
+                    <label>Adres</label>
+                    <input type="text" id="set_address" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Şehir</label>
+                    <input type="text" id="set_city" required>
+                </div>
+                <div class="form-group">
+                    <label>Telefon</label>
+                    <input type="text" id="set_phone" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kurumsal E-Posta</label>
+                    <input type="email" id="set_email" required>
+                </div>
+                <div class="form-group">
+                    <label>Web Sitesi</label>
+                    <input type="text" id="set_web" placeholder="https://www.kobiservis.com.tr">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Banka Adı</label>
+                    <input type="text" id="set_bank_name">
+                </div>
+                <div class="form-group">
+                    <label>Banka IBAN</label>
+                    <input type="text" id="set_bank_iban">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+                <button type="button" class="btn" onclick="closeSettingsModal()">İptal</button>
+                <button type="submit" class="btn btn-primary">Kaydet & Güncelle</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -237,11 +332,15 @@ function render() {
                 <td><b>${escapeHtml(d.customer_name || '')}</b><br><small style="color:var(--text-muted)">${escapeHtml(d.customer_phone || '')}</small></td>
                 <td><b>${escapeHtml(d.device_brand_model || '')}</b><br><small style="color:var(--text-muted)">${escapeHtml(d.device_category || '')}</small></td>
                 <td><code>${escapeHtml(d.device_serial || '')}</code></td>
-                <td><small>${escapeHtml(d.fault_description || '').slice(0, 45)}...</small></td>
+                <td><small>${escapeHtml(d.fault_description || '').slice(0, 40)}...</small></td>
                 <td><b>${costFormatted}</b></td>
                 <td><span class="badge ${badgeClass}">${st}</span></td>
                 <td>
-                    <button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="viewDetail(${i})">Yönet</button>
+                    <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.78rem;" onclick="viewDetail(${i})">Yönet</button>
+                        <a href="/api/termal-fis?tracking_code=${encodeURIComponent(d.tracking_code)}&width=80mm" target="_blank" class="btn" style="padding: 4px 6px; font-size: 0.78rem;">🖨️ Fiş</a>
+                        <a href="/api/cihaz-etiket?tracking_code=${encodeURIComponent(d.tracking_code)}" target="_blank" class="btn" style="padding: 4px 6px; font-size: 0.78rem;">🏷️ Etiket</a>
+                    </div>
                 </td>
             </tr>
         `;
@@ -263,6 +362,7 @@ function viewDetail(idx) {
     b.innerHTML = `
         <div class="detail-row"><div class="detail-lbl">Takip No:</div><div class="detail-val"><b>${escapeHtml(activeItem.tracking_code || '')}</b></div></div>
         <div class="detail-row"><div class="detail-lbl">Müşteri:</div><div class="detail-val"><b>${escapeHtml(activeItem.customer_name || '')}</b> (${escapeHtml(activeItem.customer_phone || '')})</div></div>
+        <div class="detail-row"><div class="detail-lbl">VKN / TCKN:</div><div class="detail-val">${escapeHtml(activeItem.customer_tax_id || '-')}</div></div>
         <div class="detail-row"><div class="detail-lbl">Cihaz / Marka Model:</div><div class="detail-val"><b>${escapeHtml(activeItem.device_brand_model || '')}</b> - ${escapeHtml(activeItem.device_category || '')}</div></div>
         <div class="detail-row"><div class="detail-lbl">Seri No (S/N):</div><div class="detail-val"><code>${escapeHtml(activeItem.device_serial || '')}</code></div></div>
         <div class="detail-row"><div class="detail-lbl">Garanti Durumu:</div><div class="detail-val">${escapeHtml(activeItem.warranty_status || '')}</div></div>
@@ -272,10 +372,50 @@ function viewDetail(idx) {
         <div class="detail-row"><div class="detail-lbl">Veri Kurtarma Durumu:</div><div class="detail-val">${escapeHtml(activeItem.data_backup_status || '')}</div></div>
     `;
 
+    updateBillingPreview();
     document.getElementById('detailModal').style.display = 'flex';
 }
 
+function updateBillingPreview() {
+    const cost = parseFloat(document.getElementById('changeCostInput').value) || 0;
+    const factor = 1.0; // Net Ele Geçen = cost
+    const gross = cost / (1.0 - 0.20 + 0.20); // Brüt = cost
+    const stoppage = gross * 0.20;
+    const vat = gross * 0.20;
+    const netFee = gross - stoppage;
+
+    document.getElementById('smmCalcPreview').innerHTML = `
+        <b>e-SMM Dökümü (Tahsil Edilen: ${cost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL):</b> 
+        Brüt: <b>${gross.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
+        %20 Stopaj: <b style="color:#b91c1c;">-${stoppage.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
+        %20 KDV: <b style="color:#0284c7;">+${vat.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
+        Net Ele Geçen: <b>${cost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b>
+    `;
+}
+
 function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
+
+function openThermalReceipt(code, width) {
+    if (code) {
+        window.open(`/api/termal-fis?tracking_code=${encodeURIComponent(code)}&width=${width}`, '_blank');
+    }
+}
+
+function openDeviceLabel(code) {
+    if (code) {
+        window.open(`/api/cihaz-etiket?tracking_code=${encodeURIComponent(code)}`, '_blank');
+    }
+}
+
+function downloadEfaturaXml() {
+    if (!activeItem || !activeItem.tracking_code) return;
+    window.location.href = `/api/export-efatura-xml?tracking_code=${encodeURIComponent(activeItem.tracking_code)}`;
+}
+
+function openEsmmPage() {
+    if (!activeItem || !activeItem.tracking_code) return;
+    window.open(`/api/esmm-html?tracking_code=${encodeURIComponent(activeItem.tracking_code)}`, '_blank');
+}
 
 async function updateCurrentStatus() {
     if (!activeItem) return;
@@ -327,6 +467,60 @@ function exportCSV() {
     a.href = url;
     a.download = `servis_kayitlar_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
+}
+
+async function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'flex';
+    try {
+        const res = await fetch('/api/ayarlar');
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('set_title').value = data.title || '';
+            document.getElementById('set_vkn').value = data.vkn || '';
+            document.getElementById('set_tax_office').value = data.tax_office || '';
+            document.getElementById('set_address').value = data.address || '';
+            document.getElementById('set_city').value = data.city || '';
+            document.getElementById('set_phone').value = data.phone || '';
+            document.getElementById('set_email').value = data.email || '';
+            document.getElementById('set_web').value = data.web || '';
+            document.getElementById('set_bank_name').value = data.bank_name || '';
+            document.getElementById('set_bank_iban').value = data.bank_iban || '';
+        }
+    } catch (e) {}
+}
+
+function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+
+async function saveSettings(e) {
+    e.preventDefault();
+    const payload = {
+        title: document.getElementById('set_title').value.trim(),
+        vkn: document.getElementById('set_vkn').value.trim(),
+        tax_office: document.getElementById('set_tax_office').value.trim(),
+        address: document.getElementById('set_address').value.trim(),
+        city: document.getElementById('set_city').value.trim(),
+        phone: document.getElementById('set_phone').value.trim(),
+        email: document.getElementById('set_email').value.trim(),
+        web: document.getElementById('set_web').value.trim(),
+        bank_name: document.getElementById('set_bank_name').value.trim(),
+        bank_iban: document.getElementById('set_bank_iban').value.trim()
+    };
+
+    try {
+        const res = await fetch('/api/ayarlar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert("✅ Servis ve fatura ayarları kaydedildi.");
+            closeSettingsModal();
+        }
+    } catch (e) {
+        alert("Ayarlar kaydedilemedi.");
+    }
 }
 
 function escapeHtml(s) {

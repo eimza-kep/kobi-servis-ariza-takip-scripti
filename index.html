@@ -238,9 +238,12 @@
                 </div>
             </div>
 
-            <div style="margin-top: 24px; display: flex; justify-content: center; gap: 12px;">
-                <button class="btn-submit" style="width: auto; padding: 10px 22px;" onclick="window.print()">🖨️ Teslim Fişini Yazdır</button>
-                <button class="btn-submit" style="width: auto; padding: 10px 22px; background: #e2e8f0; color: #334155;" onclick="location.reload()">➕ Yeni Servis Kabulü</button>
+            <div style="margin-top: 24px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn-submit" style="width: auto; padding: 10px 18px; background: #0284c7;" onclick="openThermalReceipt('80mm')">🖨️ 80mm Termal Fiş</button>
+                <button type="button" class="btn-submit" style="width: auto; padding: 10px 18px; background: #059669;" onclick="openThermalReceipt('58mm')">🖨️ 58mm Termal Fiş</button>
+                <button type="button" class="btn-submit" style="width: auto; padding: 10px 18px; background: #4f46e5;" onclick="openDeviceLabel()">🏷️ Cihaz Etiketi</button>
+                <button type="button" class="btn-submit" style="width: auto; padding: 10px 18px; background: #64748b;" onclick="window.print()">📄 A4 Yazdır</button>
+                <button type="button" class="btn-submit" style="width: auto; padding: 10px 18px; background: #e2e8f0; color: #334155;" onclick="location.reload()">➕ Yeni Servis Kabulü</button>
             </div>
         </div>
     </div>
@@ -270,6 +273,22 @@
 </div>
 
 <script>
+let lastTrackingCode = "";
+
+function openThermalReceipt(width) {
+    if (lastTrackingCode) {
+        window.open(`/api/termal-fis?tracking_code=${encodeURIComponent(lastTrackingCode)}&width=${width}`, '_blank');
+    } else {
+        window.print();
+    }
+}
+
+function openDeviceLabel() {
+    if (lastTrackingCode) {
+        window.open(`/api/cihaz-etiket?tracking_code=${encodeURIComponent(lastTrackingCode)}`, '_blank');
+    }
+}
+
 function switchTab(tab) {
     if (tab === 'new') {
         document.getElementById('sectionNew').style.display = 'block';
@@ -332,6 +351,7 @@ async function handleServiceSubmit(e) {
     document.getElementById('serviceForm').style.display = 'none';
     document.getElementById('resultBox').style.display = 'block';
     document.getElementById('trackingCodeDisplay').innerText = trackingCode;
+    lastTrackingCode = trackingCode;
 
     // Fill Receipt
     document.getElementById('prCode').innerText = trackingCode;
@@ -386,6 +406,15 @@ async function queryServiceStatus() {
         <div><b>Teknik Not:</b> ${match.technician_note || 'Cihazınız teknik ekip tarafından incelenmektedir.'}</div>
     `;
 }
+
+window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code') || params.get('takip');
+    if (code) {
+        switchTab('query');
+        document.getElementById('queryCode').value = code;
+    }
+};
 </script>
 
 </body>
