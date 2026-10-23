@@ -19,25 +19,35 @@ KOBİ'ler, teknik servisler, bilgisayar/bilişim firmaları, elektronik tamir at
    - Saf Python ile üretilen **Code 128 B Barkod** ve mobil kameraların okuyarak doğrudan canlı sorgulama sayfasına gittiği **QR Kod** desteği.
    - 6502 sayılı Kanun ve Satış Sonrası Hizmetler Yönetmeliği standartlarında 90 gün teslim şartı ve veri yedekleme yasal bilgilendirme metni.
 
-2. **e-Serbest Meslek Makbuzu (e-SMM) & e-Fatura Hızlı Kesim Kancası:**
+2. **Yedek Parça & İşçilik Ayrımı ve 7/10 KDV Tevkifatı (Kod: 604):**
+   - Parça maliyeti (`parts_cost`) ve işçilik bedeli (`labor_cost`) net ayrımı.
+   - KDV Genel Uygulama Tebliği uyarınca kurumsal bakım-onarımlarda **7/10 KDV Tevkifatı (Kod 604)** hesaplama motoru.
+   - UBL-TR 2.1 e-Fatura XML çıktısında `<cac:WithholdingTaxTotal>` ve parça/işçilik çoklu satır ihracı.
+
+3. **6502 Sayılı Kanun ve SSHYB Uyumlu Servis Teslim & Garanti Belgesi (`/api/servis-teslim-belgesi`):**
+   - Onarımı biten cihazların müşteriye tesliminde resmi A4 formatında teslim ve garanti tutanağı tanzimi.
+   - Değiştirilen yedek parça listesi, parça garanti süresi (6 Ay / 180 Gün), işçilik garanti süresi (90 Gün).
+   - Çift taraflı ıslak imza / kaşe alanları (Teknisyen kaşesi ve Müşteri teslim alma beyanı).
+
+4. **e-Serbest Meslek Makbuzu (e-SMM) & e-Fatura Hızlı Kesim Kancası:**
    - Tamamlanan ve onarım ücreti girilen servisler için otomatik stopaj (%20) ve KDV (%20) hesaplayıcı.
    - Gelir İdaresi Başkanlığı standartlarında **UBL-TR 2.1 e-SMM XML** (`SERBESTMESLEKMAKBUZU`) ihracı.
-   - Ticari fatura standartlarında **UBL-TR 2.1 e-Fatura XML** (`TICARIFATURA` / `SATIS`) taslağı.
+   - Ticari fatura standartlarında **UBL-TR 2.1 e-Fatura XML** (`TICARIFATURA` / `SATIS` / `TEVKIFAT`) taslağı.
    - Resmi formatta yazdırılabilir ve PDF olarak saklanabilir A4 e-SMM makbuz sayfası (`/api/esmm-html`).
 
-3. **Müşteri Online Sorgulama Ekranı (QR Kod Entegrasyonu):**
+5. **Müşteri Online Sorgulama Ekranı (QR Kod Entegrasyonu):**
    - Müşterilerin fişteki QR kodu okutarak veya takip kodu (`SERVIS-2026-XXXX`) ile telefonlarının son 4 hanesini girerek cihaz onarım aşamasını, teknisyen notunu ve maliyetini anlık sorgulaması.
 
-4. **WhatsApp Kurumsal İletişim Entegrasyonu:**
+6. **WhatsApp Kurumsal İletişim Entegrasyonu:**
    - Teknisyen panelinden tek tıkla müşterinin telefonuna cihaz durumu ve onarım tutarını içeren hazır WhatsApp mesajı açma.
 
-5. **Teknik Servis Yönetim Paneli (`/admin`):**
+7. **Teknik Servis Yönetim Paneli (`/admin`):**
    - 6 Aşamalı süreç takibi: *Cihaz Kabul Edildi*, *Arıza Tespiti Yapılıyor*, *Müşteri Onayı Bekleniyor*, *Parça Bekleniyor*, *Onarım Tamamlandı (Teslime Hazır)*, *Müşteriye Teslim Edildi*.
    - Parça ve işçilik maliyeti analitiği ve toplam ciro göstergesi.
    - Excel uyumlu UTF-8 BOM destekli tek tıkla **CSV Dışa Aktarımı**.
    - **Şirket & Fatura Ayarları:** VKN, vergi dairesi, banka IBAN ve unvan bilgilerini SQLite üzerinden dinamik yönetme.
 
-6. **Sıfır Bağımlılık (Zero-Dependency) Çoklu Altyapı:**
+8. **Sıfır Bağımlılık (Zero-Dependency) Çoklu Altyapı:**
    - **Python:** Standart kütüphaneler ve yerleşik SQLite ile doğrudan çalışır (`server.py`).
    - **Docker:** İzole ve üretime hazır konteyner imajı.
    - **PHP / cPanel:** Paylaşımlı sunucular için hazır JSON REST backend (`api.php`).
@@ -88,9 +98,12 @@ Dosyaları sunucunuzdaki `public_html/servis/` dizinine yükleyin. `api.php` oto
 | `GET` | `/api/servis-kayitlar` | Tüm servis kayıtlarını JSON listesi olarak döner. |
 | `POST` | `/api/servis-kayit` | Yeni cihaz kabul kaydı oluşturur, `tracking_code` üretir. |
 | `POST` | `/api/durum-guncelle` | Cihaz durumunu, tamir bedelini ve teknisyen notunu günceller. |
+| `POST` | `/api/parca-iscilik-guncelle` | Parça/işçilik bedellerini, 7/10 tevkifatı ve garanti süresini günceller. |
+| `POST` | `/api/calculate-service-financials` | Parça, işçilik ve 7/10 tevkifatlı net ödenecek tutar analitiğini hesaplar. |
+| `GET` | `/api/servis-teslim-belgesi?tracking_code=...` | 6502 S.K. ve SSHYB uyumlu A4 Servis Teslim ve Garanti Belgesi çıktısı. |
 | `GET` | `/api/termal-fis?tracking_code=...&width=80mm` | 80mm veya 58mm termal fiş yazıcı HTML çıktısını üretir. |
 | `GET` | `/api/cihaz-etiket?tracking_code=...` | Cihaza yapıştırılacak kompakt 58mm barkodlu etiket HTML çıktısını üretir. |
-| `GET` | `/api/export-efatura-xml?tracking_code=...` | GİB UBL-TR 2.1 standart e-Fatura / e-Arşiv XML taslağını indirir. |
+| `GET` | `/api/export-efatura-xml?tracking_code=...` | GİB UBL-TR 2.1 standart e-Fatura / e-Arşiv XML (Tevkifatlı/Standart) taslağını indirir. |
 | `GET` | `/api/export-esmm-xml?tracking_code=...` | GİB UBL-TR 2.1 e-Serbest Meslek Makbuzu XML dosyasını indirir. |
 | `GET` | `/api/esmm-html?tracking_code=...` | Resmi e-SMM A4 makbuz sayfasını görüntüler. |
 | `POST` | `/api/calculate-billing` | Tutar için stopaj (%20), KDV (%20) ve net ele geçen hesaplamasını döner. |
@@ -102,10 +115,38 @@ Dosyaları sunucunuzdaki `public_html/servis/` dizinine yükleyin. `api.php` oto
 
 ## 🧪 Testleri Çalıştırma
 
-Tüm veritabanı CRUD, termal baskı şablonları, Code128 barkod üretimi, stopaj hesabı ve GİB UBL-TR 2.1 XML şemaları otomatik testlerle korunmaktadır:
+Tüm veritabanı CRUD, termal baskı şablonları, Code128 barkod üretimi, stopaj hesabı, 7/10 KDV tevkifatı, parça/işçilik ayrımı ve GİB UBL-TR 2.1 XML şemaları otomatik testlerle korunmaktadır:
 
 ```bash
 python scripts/test_servis.py
+```
+
+Test Çıktı Örneği:
+```text
+============================================================
+  KOBİ TEKNİK SERVİS & TERMAL BASKI / e-SMM TEST SÜİTİ
+============================================================
+test_barcode_generation ... ok
+test_calculate_service_financials_standard ... ok
+test_calculate_service_financials_withholding_7_10 ... ok
+test_company_settings ... ok
+test_database_migration_columns_and_parts_labor_update ... ok
+test_database_tables_exist ... ok
+test_files_exist ... ok
+test_generate_efatura_xml ... ok
+test_generate_efatura_xml_withholding_7_10 ... ok
+test_generate_esmm_xml ... ok
+test_generate_warranty_delivery_html ... ok
+test_smm_calculation ... ok
+test_thermal_receipt_generation_80mm_and_58mm ... ok
+test_ticket_insert_and_retrieve ... ok
+test_ticket_status_and_cost_update ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.035s
+
+OK
+✅ TÜM BİRİM VE ENTEGRASYON TESTLERİ BAŞARIYLA GEÇTİ!
 ```
 
 Çıktı:

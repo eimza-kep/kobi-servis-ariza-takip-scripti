@@ -24,9 +24,11 @@ from scripts.thermal_receipt_generator import (
 )
 from scripts.service_billing_engine import (
     calculate_smm,
+    calculate_service_financials,
     generate_esmm_xml,
     generate_efatura_xml,
-    generate_esmm_html
+    generate_esmm_html,
+    generate_warranty_delivery_html
 )
 
 class TestServiceTrackingSystem(unittest.TestCase):
@@ -247,6 +249,116 @@ class TestServiceTrackingSystem(unittest.TestCase):
         self.assertEqual(settings["title"], "Doruk Teknik Servis A.Ş.")
         self.assertEqual(settings["vkn"], "3334445555")
         self.assertEqual(settings["phone"], "0212 999 88 77")
+
+    def test_calculate_service_financials_standard(self):
+        fin = calculate_service_financials(parts_cost=1000.0, labor_cost=2000.0, apply_withholding=False)
+        self.assertEqual(fin["parts_cost"], 1000.0)
+        self.assertEqual(fin["labor_cost"], 2000.0)
+        self.assertEqual(fin["total_matrah"], 3000.0)
+        self.assertEqual(fin["parts_vat"], 200.0)
+        self.assertEqual(fin["labor_vat"], 400.0)
+        self.assertEqual(fin["total_calculated_vat"], 600.0)
+        self.assertFalse(fin["is_withholding"])
+        self.assertEqual(fin["payable_vat"], 600.0)
+        self.assertEqual(fin["grand_total"], 3600.0)
+        self.assertEqual(fin["payable_amount"], 3600.0)
+
+    def test_calculate_service_financials_withholding_7_10(self):
+        # 2000 TL parça (KDV 400), 4000 TL işçilik (KDV 800)
+        # 7/10 tevkifat yalnızca işçiliğe uygulanır: 800 * 7 / 10 = 560 TL
+        # Tahsil edilecek KDV = 400 (parça) + 240 (kalan işçilik) = 640 TL
+        # Net ödenecek tutar = 6000 + 640 = 6640 TL
+        fin = calculate_service_financials(parts_cost=2000.0, labor_cost=4000.0, apply_withholding=True)
+        self.assertEqual(fin["total_matrah"], 6000.0)
+        self.assertEqual(fin["total_calculated_vat"], 1200.0)
+        self.assertTrue(fin["is_withholding"])
+        self.assertEqual(fin["withholding_code"], "604")
+        self.assertEqual(fin["withholding_rate"], "7/10")
+        self.assertEqual(fin["withholding_amount"], 560.0)
+        self.assertEqual(fin["payable_vat"], 640.0)
+        self.assertEqual(fin["grand_total"], 7200.0)
+        self.assertEqual(fin["payable_amount"], 6640.0)
+
+    def test_generate_efatura_xml_withholding_7_10(self):
+        sample_ticket = {
+            "tracking_code": "SERVIS-TEST-WITHHOLDING",
+            "customer_name": "Kurumsal Bilişim Ltd.",
+            "customer_tax_id": "7788990011",
+            "device_brand_model": "Dell PowerEdge Server",
+            "parts_cost": 5000.0,
+            "labor_cost": 3000.0,
+            "withholding_applied": 1
+        }
+        xml_str = generate_efatura_xml(sample_ticket)
+        root = ET.fromstring(xml_str)
+        namespaces = {
+            'ubl': 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+            'cac': 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+            'cbc': 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2'
+        }
+
+        inv_type = root.find('cbc:InvoiceTypeCode', namespaces)
+        self.assertEqual(inv_type.text, "TEVKIFAT")
+
+        line_count = root.find('cbc:LineCountNumeric', namespaces)
+        self.assertEqual(line_count.text, "2")
+
+        # 7/10 Withholding kontrolü (3000 * 0.20 * 7 / 10 = 420.00)
+        w_tax = root.find('cac:WithholdingTaxTotal', namespaces)
+        self.assertIsNotNone(w_tax)
+        w_amt = w_tax.find('cbc:TaxAmount', namespaces)
+        self.assertEqual(w_amt.text, "420.00")
+        w_code = w_tax.find('cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:TaxTypeCode', namespaces)
+        self.assertEqual(w_code.text, "604")
+
+        # Net ödenecek tutar: Matrah(8000) + Tahsil KDV(1000 + 180 = 1180) = 9180.00
+        payable = root.find('cac:LegalMonetaryTotal/cbc:PayableAmount', namespaces)
+        self.assertEqual(payable.text, "9180.00")
+
+    def test_generate_warranty_delivery_html(self):
+        sample_ticket = {
+            "tracking_code": "SERVIS-TEST-WARRANTY",
+            "customer_name": "Ahmet Yılmaz",
+            "customer_phone": "0532 555 44 33",
+            "device_brand_model": "Lenovo ThinkPad X1 Carbon",
+            "device_category": "Laptop",
+            "device_serial": "LNV8849201",
+            "fault_description": "Mavi ekran ve batarya şişmesi",
+            "technician_note": "Orijinal batarya ve 1TB NVMe SSD değişimi yapıldı.",
+            "parts_cost": 3500.0,
+            "labor_cost": 1500.0,
+            "warranty_duration_months": 12,
+            "parts_json": '[{"name": "Orijinal 57Wh Batarya", "qty": 1, "price": 2000.0, "warranty": "12 Ay"}, {"name": "1TB Samsung 990 Pro SSD", "qty": 1, "price": 1500.0, "warranty": "24 Ay"}]'
+        }
+        html = generate_warranty_delivery_html(sample_ticket)
+        self.assertIn("SERVİS TESLİM & GARANTİ BELGESİ", html)
+        self.assertIn("6502 S.K.", html)
+        self.assertIn("SERVIS-TEST-WARRANTY", html)
+        self.assertIn("Lenovo ThinkPad X1 Carbon", html)
+        self.assertIn("Orijinal 57Wh Batarya", html)
+        self.assertIn("Samsung 990 Pro SSD", html)
+        self.assertIn("90 Gün", html)
+        self.assertIn("Teknisyen / Yetkili İmza & Kaşe", html)
+        self.assertIn("Müşteri İsim, Soyisim & İmza", html)
+
+    def test_database_migration_columns_and_parts_labor_update(self):
+        ticket_code = "SERVIS-TEST-MIGRATE"
+        cur = self.conn.cursor()
+        cur.execute("""
+            INSERT INTO service_tickets (
+                tracking_code, customer_name, parts_cost, labor_cost,
+                withholding_applied, warranty_duration_months, repair_cost, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (ticket_code, "Migrate Test Müşteri", 1200.0, 800.0, 1, 12, 2272.0, "Onarım Tamamlandı (Teslime Hazır)"))
+        self.conn.commit()
+
+        cur.execute("SELECT parts_cost, labor_cost, withholding_applied, warranty_duration_months FROM service_tickets WHERE tracking_code = ?", (ticket_code,))
+        row = cur.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["parts_cost"], 1200.0)
+        self.assertEqual(row["labor_cost"], 800.0)
+        self.assertEqual(row["withholding_applied"], 1)
+        self.assertEqual(row["warranty_duration_months"], 12)
 
     def test_files_exist(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

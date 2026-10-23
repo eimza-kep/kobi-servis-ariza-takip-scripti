@@ -27,9 +27,11 @@ from scripts.thermal_receipt_generator import (
 )
 from scripts.service_billing_engine import (
     calculate_smm,
+    calculate_service_financials,
     generate_esmm_xml,
     generate_efatura_xml,
     generate_esmm_html,
+    generate_warranty_delivery_html,
     DEFAULT_SUPPLIER
 )
 
@@ -69,6 +71,19 @@ def init_db():
             value TEXT
         )
     """)
+    # Kolon migrasyonu
+    cur.execute("PRAGMA table_info(service_tickets)")
+    existing_cols = [r[1] for r in cur.fetchall()]
+    new_cols = [
+        ("parts_cost", "REAL DEFAULT 0"),
+        ("labor_cost", "REAL DEFAULT 0"),
+        ("parts_json", "TEXT DEFAULT '[]'"),
+        ("withholding_applied", "INTEGER DEFAULT 0"),
+        ("warranty_duration_months", "INTEGER DEFAULT 6")
+    ]
+    for col_name, col_def in new_cols:
+        if col_name not in existing_cols:
+            cur.execute(f"ALTER TABLE service_tickets ADD COLUMN {col_name} {col_def}")
     conn.commit()
     conn.close()
 
@@ -128,6 +143,8 @@ class ServiceHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_export_esmm_xml(qs)
         elif path == "/api/esmm-html":
             self.handle_esmm_html(qs)
+        elif path == "/api/servis-teslim-belgesi":
+            self.handle_warranty_delivery_html(qs)
         else:
             super().do_GET()
 
@@ -143,6 +160,10 @@ class ServiceHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_save_settings()
         elif path == "/api/calculate-billing":
             self.handle_calculate_billing()
+        elif path == "/api/parca-iscilik-guncelle":
+            self.handle_update_parts_labor()
+        elif path == "/api/calculate-service-financials":
+            self.handle_calculate_service_financials()
         else:
             self.send_error(404, "Endpoint not found")
 
@@ -260,6 +281,89 @@ class ServiceHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def handle_warranty_delivery_html(self, qs):
+        tracking_code = qs.get("tracking_code", [""])[0]
+        ticket = self.get_ticket_by_code(tracking_code)
+        if not ticket:
+            self.send_error(404, f"'{tracking_code}' takip kodlu servis kaydı bulunamadı.")
+            return
+
+        company = get_company_settings()
+        html = generate_warranty_delivery_html(ticket, supplier=company)
+        body = html.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def handle_update_parts_labor(self):
+        length = int(self.headers.get("Content-Length", 0))
+        post_data = self.rfile.read(length)
+        try:
+            data = json.loads(post_data.decode("utf-8"))
+            tracking_code = data.get("tracking_code")
+            parts_cost = float(data.get("parts_cost", 0.0) or 0.0)
+            labor_cost = float(data.get("labor_cost", 0.0) or 0.0)
+            withholding_applied = 1 if data.get("withholding_applied") else 0
+            warranty_months = int(data.get("warranty_duration_months", 6) or 6)
+            tech_note = data.get("technician_note", "")
+            new_status = data.get("status")
+            parts_json_val = data.get("parts_json")
+            if isinstance(parts_json_val, (list, dict)):
+                parts_json_str = json.dumps(parts_json_val, ensure_ascii=False)
+            elif parts_json_val:
+                parts_json_str = str(parts_json_val)
+            else:
+                parts_json_str = "[]"
+
+            fin = calculate_service_financials(
+                parts_cost=parts_cost,
+                labor_cost=labor_cost,
+                apply_withholding=bool(withholding_applied),
+                parts_list=parts_json_str
+            )
+            total_repair_cost = fin["payable_amount"]
+
+            conn = sqlite3.connect(DB_FILE)
+            cur = conn.cursor()
+            update_sql = """
+                UPDATE service_tickets
+                SET parts_cost = ?, labor_cost = ?, parts_json = ?,
+                    withholding_applied = ?, warranty_duration_months = ?,
+                    repair_cost = ?, technician_note = ?
+            """
+            params = [parts_cost, labor_cost, parts_json_str, withholding_applied, warranty_months, total_repair_cost, tech_note]
+
+            if new_status:
+                update_sql += ", status = ?"
+                params.append(new_status)
+
+            update_sql += " WHERE tracking_code = ?"
+            params.append(tracking_code)
+
+            cur.execute(update_sql, tuple(params))
+            conn.commit()
+            conn.close()
+
+            self.send_json({"status": "success", "financials": fin, "tracking_code": tracking_code})
+        except Exception as e:
+            self.send_json({"status": "error", "message": str(e)}, status=500)
+
+    def handle_calculate_service_financials(self):
+        length = int(self.headers.get("Content-Length", 0))
+        post_data = self.rfile.read(length)
+        try:
+            data = json.loads(post_data.decode("utf-8"))
+            parts_cost = float(data.get("parts_cost", 0.0) or 0.0)
+            labor_cost = float(data.get("labor_cost", 0.0) or 0.0)
+            apply_withholding = bool(data.get("withholding_applied", False))
+            parts_list = data.get("parts_list") or data.get("parts_json")
+            fin = calculate_service_financials(parts_cost, labor_cost, apply_withholding, parts_list=parts_list)
+            self.send_json({"status": "success", "financials": fin})
+        except Exception as e:
+            self.send_json({"status": "error", "message": str(e)}, status=400)
 
     def handle_calculate_billing(self):
         length = int(self.headers.get("Content-Length", 0))

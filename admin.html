@@ -160,10 +160,10 @@
         </div>
 
         <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
-            <div style="font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">Teknik Servis Güncellemesi:</div>
+            <div style="font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">🛠️ Teknik Servis, Parça, İşçilik & Garanti Güncellemesi:</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 600;">Durum:</label>
+                    <label style="font-size: 0.8rem; font-weight: 600;">Servis Durumu:</label>
                     <select id="changeStatusSelect" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
                         <option value="Cihaz Kabul Edildi">Cihaz Kabul Edildi</option>
                         <option value="Arıza Tespiti Yapılıyor">Arıza Tespiti Yapılıyor</option>
@@ -175,13 +175,34 @@
                     </select>
                 </div>
                 <div>
-                    <label style="font-size: 0.8rem; font-weight: 600;">Onarım / Parça Tutarı (TL):</label>
-                    <input type="number" step="0.01" id="changeCostInput" oninput="updateBillingPreview()" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                    <label style="font-size: 0.8rem; font-weight: 600;">Parça Garanti Süresi (6502 S.K.):</label>
+                    <select id="changeWarrantySelect" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                        <option value="3">3 Ay Garanti</option>
+                        <option value="6" selected>6 Ay (180 Gün) Garanti (Standart)</option>
+                        <option value="12">12 Ay (1 Yıl) Garanti</option>
+                        <option value="24">24 Ay (2 Yıl) Garanti</option>
+                    </select>
                 </div>
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 600;">Yedek Parça Bedeli (KDV Hariç TL):</label>
+                    <input type="number" step="0.01" id="changePartsCostInput" oninput="updateBillingPreview()" placeholder="0.00" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; font-weight: 600;">Teknik İşçilik Bedeli (KDV Hariç TL):</label>
+                    <input type="number" step="0.01" id="changeLaborCostInput" oninput="updateBillingPreview()" placeholder="0.00" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <input type="checkbox" id="changeWithholdingCheckbox" onchange="updateBillingPreview()" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="changeWithholdingCheckbox" style="font-size: 0.82rem; font-weight: 600; cursor: pointer; color: #1e293b;">
+                    Kurumsal 7/10 KDV Tevkifatı Uygula (İşçilikte GİB Kod: 604)
+                </label>
+            </div>
             <div>
-                <label style="font-size: 0.8rem; font-weight: 600;">Teknisyen Notu:</label>
-                <input type="text" id="changeNoteInput" placeholder="Müşteriye de gösterilecek arıza ve işlem notu..." style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
+                <label style="font-size: 0.8rem; font-weight: 600;">Teknisyen Notu (Müşteri & Garanti Belgesinde Görünür):</label>
+                <input type="text" id="changeNoteInput" placeholder="Müşteriye de gösterilecek arıza, parça ve işlem notu..." style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border);">
             </div>
         </div>
 
@@ -190,6 +211,7 @@
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                 <button class="btn" onclick="openThermalReceipt(activeItem ? activeItem.tracking_code : '', '80mm')">🖨️ 80mm Fiş</button>
                 <button class="btn" onclick="openDeviceLabel(activeItem ? activeItem.tracking_code : '')">🏷️ Etiket</button>
+                <button class="btn" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;" onclick="openWarrantyDelivery()">🛡️ Garanti Belgesi</button>
                 <button class="btn btn-wa" onclick="sendWhatsApp()">💬 WhatsApp</button>
             </div>
         </div>
@@ -340,6 +362,7 @@ function render() {
                         <button class="btn btn-primary" style="padding: 4px 8px; font-size: 0.78rem;" onclick="viewDetail(${i})">Yönet</button>
                         <a href="/api/termal-fis?tracking_code=${encodeURIComponent(d.tracking_code)}&width=80mm" target="_blank" class="btn" style="padding: 4px 6px; font-size: 0.78rem;">🖨️ Fiş</a>
                         <a href="/api/cihaz-etiket?tracking_code=${encodeURIComponent(d.tracking_code)}" target="_blank" class="btn" style="padding: 4px 6px; font-size: 0.78rem;">🏷️ Etiket</a>
+                        <a href="/api/servis-teslim-belgesi?tracking_code=${encodeURIComponent(d.tracking_code)}" target="_blank" class="btn" style="padding: 4px 6px; font-size: 0.78rem; background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">🛡️ Garanti Belgesi</a>
                     </div>
                 </td>
             </tr>
@@ -355,7 +378,10 @@ function viewDetail(idx) {
 
     document.getElementById('modalTitle').innerText = `${activeItem.tracking_code} - ${activeItem.device_brand_model}`;
     document.getElementById('changeStatusSelect').value = activeItem.status || 'Cihaz Kabul Edildi';
-    document.getElementById('changeCostInput').value = activeItem.repair_cost || 0;
+    document.getElementById('changePartsCostInput').value = activeItem.parts_cost || 0;
+    document.getElementById('changeLaborCostInput').value = (activeItem.labor_cost !== undefined && activeItem.labor_cost !== null) ? activeItem.labor_cost : (activeItem.repair_cost ? (activeItem.repair_cost / 1.20).toFixed(2) : 0);
+    document.getElementById('changeWithholdingCheckbox').checked = Boolean(activeItem.withholding_applied);
+    document.getElementById('changeWarrantySelect').value = String(activeItem.warranty_duration_months || 6);
     document.getElementById('changeNoteInput').value = activeItem.technician_note || '';
 
     const b = document.getElementById('modalBody');
@@ -377,19 +403,23 @@ function viewDetail(idx) {
 }
 
 function updateBillingPreview() {
-    const cost = parseFloat(document.getElementById('changeCostInput').value) || 0;
-    const factor = 1.0; // Net Ele Geçen = cost
-    const gross = cost / (1.0 - 0.20 + 0.20); // Brüt = cost
-    const stoppage = gross * 0.20;
-    const vat = gross * 0.20;
-    const netFee = gross - stoppage;
+    const partsCost = parseFloat(document.getElementById('changePartsCostInput').value) || 0;
+    const laborCost = parseFloat(document.getElementById('changeLaborCostInput').value) || 0;
+    const isWithholding = document.getElementById('changeWithholdingCheckbox').checked;
+
+    const partsVat = partsCost * 0.20;
+    const laborVat = laborCost * 0.20;
+    const totalMatrah = partsCost + laborCost;
+    const totalVat = partsVat + laborVat;
+    const withholdingAmt = isWithholding ? (laborVat * 0.70) : 0;
+    const payableVat = totalVat - withholdingAmt;
+    const payableTotal = totalMatrah + payableVat;
 
     document.getElementById('smmCalcPreview').innerHTML = `
-        <b>e-SMM Dökümü (Tahsil Edilen: ${cost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL):</b> 
-        Brüt: <b>${gross.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
-        %20 Stopaj: <b style="color:#b91c1c;">-${stoppage.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
-        %20 KDV: <b style="color:#0284c7;">+${vat.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> | 
-        Net Ele Geçen: <b>${cost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b>
+        <b>Finansal Döküm:</b> Matrah: <b>${totalMatrah.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> (Parça: ${partsCost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL, İşçilik: ${laborCost.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL) | 
+        KDV (%20): <b>${totalVat.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b> 
+        ${isWithholding ? `<br><span style="color:#b91c1c;">7/10 KDV Tevkifatı (Kod 604): <b>-${withholdingAmt.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b></span> | <span style="color:#15803d;">Tahsil Edilecek KDV: <b>+${payableVat.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</b></span>` : ''}
+        | <span style="color:#0284c7; font-size:0.95rem; font-weight:bold;">Net Tahsilat: ${payableTotal.toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</span>
     `;
 }
 
@@ -417,28 +447,50 @@ function openEsmmPage() {
     window.open(`/api/esmm-html?tracking_code=${encodeURIComponent(activeItem.tracking_code)}`, '_blank');
 }
 
+function openWarrantyDelivery() {
+    if (!activeItem || !activeItem.tracking_code) return;
+    window.open(`/api/servis-teslim-belgesi?tracking_code=${encodeURIComponent(activeItem.tracking_code)}`, '_blank');
+}
+
 async function updateCurrentStatus() {
     if (!activeItem) return;
     const newStatus = document.getElementById('changeStatusSelect').value;
-    const newCost = parseFloat(document.getElementById('changeCostInput').value) || 0;
+    const partsCost = parseFloat(document.getElementById('changePartsCostInput').value) || 0;
+    const laborCost = parseFloat(document.getElementById('changeLaborCostInput').value) || 0;
+    const isWithholding = document.getElementById('changeWithholdingCheckbox').checked;
+    const warrantyMonths = parseInt(document.getElementById('changeWarrantySelect').value) || 6;
     const newNote = document.getElementById('changeNoteInput').value.trim();
 
     activeItem.status = newStatus;
-    activeItem.repair_cost = newCost;
+    activeItem.parts_cost = partsCost;
+    activeItem.labor_cost = laborCost;
+    activeItem.withholding_applied = isWithholding ? 1 : 0;
+    activeItem.warranty_duration_months = warrantyMonths;
     activeItem.technician_note = newNote;
 
     try {
-        await fetch('/api/durum-guncelle', {
+        const res = await fetch('/api/parca-iscilik-guncelle', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 tracking_code: activeItem.tracking_code,
                 status: newStatus,
-                repair_cost: newCost,
+                parts_cost: partsCost,
+                labor_cost: laborCost,
+                withholding_applied: isWithholding,
+                warranty_duration_months: warrantyMonths,
                 technician_note: newNote
             })
         });
-    } catch (e) {}
+        if (res.ok) {
+            const data = await res.json();
+            if (data.financials) {
+                activeItem.repair_cost = data.financials.payable_amount;
+            }
+        }
+    } catch (e) {
+        activeItem.repair_cost = (partsCost + laborCost) * 1.20;
+    }
 
     localStorage.setItem('kobi_servis_kayitlar', JSON.stringify(allData));
     closeModal();
