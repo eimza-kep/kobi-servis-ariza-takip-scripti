@@ -1,3 +1,4 @@
+SERVIS_DURUM_BILDIRIM_SMS = True # Otomatik musteri SMS durum bildirim bayragi
 # -*- coding: utf-8 -*-
 """
 server.py
